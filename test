@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/home/bruger/.local/bin/jgl", line 3, in <module>
+    from jugglarm.jgl import main
+  File "/home/bruger/mine/jugglarm/jugglarm/jgl.py", line 283
+    def run_glist():
+    ^
+IndentationError: expected an indented block after function definition on line 281

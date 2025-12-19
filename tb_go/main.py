@@ -18,7 +18,6 @@ def debug_print(msg: str) -> None:
     if DEBUG:
         print(f"[DEBUG] {msg}", file=sys.stderr)
 
-
 # ============================================================================
 # Data Models
 # ============================================================================
@@ -33,8 +32,8 @@ class TracebackLocation:
     
     def __str__(self) -> str:
         """Format for display in fzf."""
-        return f"{self.filepath}:{self.line} in {self.function}: {self.code.strip()}"
-
+        func_part = f" in {self.function}" if self.function else ""
+        return f"{self.filepath}:{self.line}{func_part}: {self.code.strip()}"
 
 # ============================================================================
 # Parser
@@ -44,8 +43,9 @@ class TracebackParser:
     """Parse Python tracebacks to extract file locations."""
     
     # Pattern matches: File "/path/to/file.py", line 123, in function_name
+    # Or: File "/path/to/file.py", line 123 (for syntax errors)
     TRACEBACK_PATTERN = re.compile(
-        r'^\s*File "([^"]+)", line (\d+), in (.+)$',
+        r'^\s*File "([^"]+)", line (\d+)(?:, in (.+))?$',
         re.MULTILINE
     )
     
@@ -70,7 +70,7 @@ class TracebackParser:
             if match:
                 filepath = match.group(1)
                 line_num = int(match.group(2))
-                function = match.group(3)
+                function = match.group(3) if match.group(3) else "<module>"
                 
                 # Try to get the code line (usually the next line)
                 code = ""
@@ -86,7 +86,6 @@ class TracebackParser:
         
         return locations
 
-
 # ============================================================================
 # Clipboard
 # ============================================================================
@@ -94,7 +93,6 @@ class TracebackParser:
 class ClipboardError(Exception):
     """Raised when clipboard operations fail."""
     pass
-
 
 def read_clipboard() -> str:
     """Read text from system clipboard.
@@ -151,7 +149,6 @@ def read_clipboard() -> str:
         "Could not read clipboard. Please install xclip, xsel, or use macOS."
     )
 
-
 # ============================================================================
 # Selector (fzf)
 # ============================================================================
@@ -159,7 +156,6 @@ def read_clipboard() -> str:
 class FzfNotFoundError(Exception):
     """Raised when fzf is not installed."""
     pass
-
 
 class FzfSelector:
     """Select from traceback locations using fzf."""
@@ -254,7 +250,6 @@ class FzfSelector:
             debug_print(f"fzf error: {e}")
             raise FzfNotFoundError(f"Error running fzf: {e}")
 
-
 # ============================================================================
 # Vim Opener
 # ============================================================================
@@ -262,7 +257,6 @@ class FzfSelector:
 class VimNotFoundError(Exception):
     """Raised when vim is not installed."""
     pass
-
 
 class VimOpener:
     """Open files in vim at specific line numbers."""
@@ -289,12 +283,17 @@ class VimOpener:
         # Using +{line} to jump to line number
         debug_print(f"Opening vim: vim +{location.line} {location.filepath}")
         try:
-            subprocess.run(['vim', f'+{location.line}', location.filepath], check=False)
+            import os
+            import shlex
+            # Use os.system instead of subprocess for proper terminal handling
+            cmd = f"vim +{location.line} {shlex.quote(location.filepath)}"
+            os.system(cmd)
             debug_print("vim closed")
+            # Explicitly reset terminal
+            os.system('reset')
         except Exception as e:
             debug_print(f"vim error: {e}")
             raise VimNotFoundError(f"Error opening vim: {e}")
-
 
 # ============================================================================
 # Command Runner
@@ -333,7 +332,6 @@ class CommandRunner:
             debug_print(f"Command execution failed: {e}")
             return str(e), 1
 
-
 # ============================================================================
 # CLI Interface
 # ============================================================================
@@ -346,11 +344,9 @@ class Colors:
     YELLOW = '\033[1;33m'
     NC = '\033[0m'  # No Color
 
-
 def print_colored(text: str, color: str) -> None:
     """Print text with color."""
     print(f"{color}{text}{Colors.NC}")
-
 
 def select_location(locations: List[TracebackLocation]) -> Optional[TracebackLocation]:
     """
@@ -369,7 +365,6 @@ def select_location(locations: List[TracebackLocation]) -> Optional[TracebackLoc
         print_colored("fzf not found, opening last location...", Colors.YELLOW)
         # Return last location (most recent error)
         return locations[-1] if locations else None
-
 
 def main() -> int:
     """Main entry point for tb-go CLI."""
@@ -479,7 +474,6 @@ def main() -> int:
     
     debug_print("Done!")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
