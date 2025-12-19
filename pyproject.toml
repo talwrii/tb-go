@@ -1,18 +1,17 @@
 [build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+requires = [ "setuptools>=45", "wheel",]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "tb-go"
-version = "1.0.0"
+version = "1.2.0"
 description = "Traceback go - Navigate to lines in tracebacks from the command-line"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = []
-
-authors = [
-    {name = "@readwithai", email = "talwrii@gmail.com"}
-]
+[[project.authors]]
+name = "@readwithai"
+email = "talwrii@gmail.com"
 
 [project.urls]
 Homepage = "https://github.com/talwrii/tb-go"
@@ -21,5 +20,5 @@ Homepage = "https://github.com/talwrii/tb-go"
 tb-go = "tb_go.main:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["tb_go*"]
+where = [ ".",]
+include = [ "tb_go*",]
